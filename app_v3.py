@@ -10,13 +10,13 @@ from datetime import datetime
 def load_data(ticker, start, end):
     df = yf.download(ticker, start=start, end=end)
 
-    df['Tomorrow'] = df['Close'].shift(-1)
+    df['Tomorrow'] = df['Adj Close'].shift(-1)
     df = df.dropna(subset=['Tomorrow']) 
-    df['Return'] = df['Close'].pct_change()
-    df['MA5'] = df['Close'].rolling(window=5).mean()
-    df['MA10'] = df['Close'].rolling(window=10).mean()
+    df['Return'] = df['Adj Close'].pct_change()
+    df['MA5'] = df['Adj Close'].rolling(window=5).mean()
+    df['MA10'] = df['Adj Close'].rolling(window=10).mean()
     df = df.dropna()
-    df['Target'] = (df['Tomorrow'] > df['Close']).astype(int)
+    df['Target'] = (df['Tomorrow'] > df['Adj Close']).astype(int)
     
     return df
 
