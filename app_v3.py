@@ -9,13 +9,15 @@ from datetime import datetime
 # --- 데이터 불러오기 ---
 def load_data(ticker, start, end):
     df = yf.download(ticker, start=start, end=end)
+
+    df['Tomorrow'] = df['Close'].shift(-1)
+    df = df.dropna(subset=['Tomorrow']) 
     df['Return'] = df['Close'].pct_change()
     df['MA5'] = df['Close'].rolling(window=5).mean()
     df['MA10'] = df['Close'].rolling(window=10).mean()
-    df['Tomorrow'] = df['Close'].shift(-1)
-    df = df.dropna(subset=['Tomorrow']) 
-    df['Target'] = (df['Tomorrow'] > df['Close']).astype(int)
     df = df.dropna()
+    df['Target'] = (df['Tomorrow'] > df['Close']).astype(int)
+    
     return df
 
 # --- XGBoost 모델 학습 ---
