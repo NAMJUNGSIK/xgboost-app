@@ -10,13 +10,31 @@ from datetime import datetime
 def load_data(ticker, start, end):
     df = yf.download(ticker, start=start, end=end)
 
-    df['Tomorrow'] = df['Adj Close'].shift(-1)
+    # ✅ MultiIndex 컬럼일 때 처리 (한 번 flatten 해주기)
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)  # 'Close', 'Adj Close' 식으로 풀기
+
+    if 'Close' not in df.columns and 'Adj Close' in df.columns:
+        df['Close'] = df['Adj Close']
+
+    if 'Close' not in df.columns:
+        st.error(f"{ticker} 종목에서 Close / Adj Close 데이터가 없습니다.")
+        return None
+
+    df['Tomorrow'] = df['Close'].shift(-1)
     df = df.dropna(subset=['Tomorrow']) 
-    df['Return'] = df['Adj Close'].pct_change()
-    df['MA5'] = df['Adj Close'].rolling(window=5).mean()
-    df['MA10'] = df['Adj Close'].rolling(window=10).mean()
+    
+    df['Return'] = df['Close'].pct_change()
+    df['MA5'] = df['Close'].rolling(window=5).mean()
+    df['MA10'] = df['Close'].rolling(window=10).mean()
+    
     df = df.dropna()
-    df['Target'] = (df['Tomorrow'] > df['Adj Close']).astype(int)
+    
+    if df.empty or len(df) < 20:
+        st.error("데이터가 충분하지 않습니다.")
+        return None
+    
+    df['Target'] = (df['Tomorrow'] > df['Close']).astype(int)
     
     return df
 
